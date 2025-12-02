@@ -1,5 +1,6 @@
 mod server;
 mod store;
+mod command;
 
 use store::Store;
 

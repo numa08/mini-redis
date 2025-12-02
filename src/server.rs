@@ -4,6 +4,7 @@ use tokio::{
 };
 
 use crate::store::Store;
+use crate::command::Command;
 
 pub async fn run(addr: &str, store: Store) {
     let listener = TcpListener::bind(addr).await.unwrap();
@@ -34,7 +35,9 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, store: Store) {
                 let received = received.trim();
                 println!("Received: {:?}", received);
 
-                let response = handle_command(received, &store);
+                let command = Command::parse(received);
+                let response = command.execute(&store);
+
                 if let Err(e) = socket.write_all(response.as_bytes()).await {
                     println!("Error writing: {}", e);
                     break;
@@ -45,21 +48,5 @@ async fn handle_connection(mut socket: tokio::net::TcpStream, store: Store) {
                 break;
             }
         }
-    }
-}
-
-fn handle_command(input: &str, store: &Store) -> String {
-    let parts: Vec<&str> = input.split_whitespace().collect();
-    match parts.as_slice() {
-        ["PING"] => "+PONG\r\n".to_string(),
-        ["SET", key, value] => {
-            store.set(key.to_string(), value.to_string());
-            "+OK\r\n".to_string()
-        }
-        ["GET", key] => match store.get(key) {
-            Some(value) => format!("${}\r\n{}\r\n", value.len(), value),
-            None => "$-1\r\n".to_string(),
-        },
-        _ => "-Err unknown command\r\n".to_string(),
     }
 }

@@ -22,4 +22,9 @@ impl Store {
         let mut data = self.data.lock().unwrap();
         data.insert(key, value);
     }
+
+    pub fn del(&self, key: &str) -> bool {
+        let mut data = self.data.lock().unwrap();
+        data.remove(key).is_some()
+    }
 }
